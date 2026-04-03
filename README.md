@@ -14,14 +14,23 @@ This repository contains a high-performance deep learning pipeline for the autom
 
 ## 📊 Dataset Information
 
-The pipeline uses the [BriscMat Brain Tumour MRI Dataset (2026)](https://www.kaggle.com/datasets/vivanrv/briscmat-brain-tumour-mri-dataset-2026) consisting of 6,000 .mat files.
+The pipeline uses the BriscMat Brain Tumour MRI Dataset (2026) consisting of 6,000 .mat files.
 
-- Labels:
+- Dataset Splits: 5,000 samples for training and 1,000 samples for testing.
+- Category Labels:
     - 0: No Tumor
     - 1: Meningioma
     - 2: Glioma
-    - 3: Pituitary
-- MRI Views: Axial, Coronal, Sagittal.
+    - 3: Pituitary Tumor
+- MRI View Orientation:
+    - 1: Axial
+    - 2: Coronal
+    - 3: Sagittal
+- File Content (.mat keys):
+    - cjdata.image: Grayscale MRI image (typically 0-255).
+    - cjdata.tumorMask: Binary segmentation mask (1 for tumor, 0 for background).
+    - cjdata.label: Categorical class label.
+    - cjdata.view: MRI view identifier.
 
 ## 🏗️ Architecture: Multi-Task U-Net
 
