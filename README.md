@@ -1,58 +1,77 @@
-# Phase 0 & 1: Brain Tumor MRI Data Pipeline
+# Multi-Task Brain Tumor MRI Classification & Segmentation
 
-This repository contains the data pipeline for the BriscMat Brain Tumour MRI Dataset (2026), focusing strictly on **Phase 0 (Exploratory Data Analysis)** and **Phase 1 (Offline Preprocessing and DataLoader Setup)**. 
+This repository contains a high-performance deep learning pipeline for the automated analysis of brain tumor MRI scans. Using the BriscMat Brain Tumour MRI Dataset (2026), the system performs simultaneous tumor segmentation and multi-class classification using a specialized Multi-Task U-Net architecture.
 
-No training loops, modeling, or advanced augmentations are included here, ensuring a clean and robust foundation for subsequent experimentation phases.
+## 🚀 Key Features
 
-## File Structure
+- Multi-Task Learning: A unified model architecture that solves two problems at once:
+    - Segmentation: Pixel-level tumor localization using a U-Net decoder.
+    - Classification: Categorizing tumors into four classes (Meningioma, Glioma, Pituitary, or No Tumor).
+- Physics-Based Feature Engineering: Integrates Z-score normalization and Gradient/Edge Maps to normalize MRI intensity variations and emphasize tumor boundaries.
+- View-Aware Embeddings: Incorporates MRI plane information (Axial, Coronal, Sagittal) into the classification head via learnable embeddings, improving accuracy across different scan orientations.
+- Advanced Training Pipeline: Implements Mixed Precision (AMP), Gradient Accumulation, and Cosine Annealing learning rate schedules for stable and efficient training.
+- Interpretability: Includes Grad-CAM visualization to identify the features the model uses for classification decisions.
 
-- `utils_dataset.py`: Core utilities for robustly reading `.mat` files and mappings for labels/views.
-- `eda.py`: Scripts for Phase 0. Generates visualizations for spatial overlays, pixel intensities, geometric profiles, and class tabulations.
-- `preprocess_mat_dataset.py`: Script to convert raw `.mat` files into `.pt` (PyTorch Tensors) offline to remove bottleneck during training. Creates a unified `metadata.json`.
-- `dataset.py`: A custom `torch.utils.data.Dataset` that lazily loads the preprocessed `.pt` files.
-- `sanity_check.py`: Verification script to ensure data shapes and label distributions remain consistent before moving to Phase 2.
+## 📊 Dataset Information
 
-## How to Run
+The pipeline uses the [BriscMat Brain Tumour MRI Dataset (2026)](https://www.kaggle.com/datasets/vivanrv/briscmat-brain-tumour-mri-dataset-2026) consisting of 6,000 .mat files.
 
-### 1. Exploratory Data Analysis (Phase 0)
-Run `eda.py` to analyze random samples and generate plots. It defaults to looking at the kagglehub cache directory but can be configured in the script.
-```bash
-python eda.py
-```
-*Outputs will be saved in the `eda_outputs/` directory.*
+- Labels:
+    - 0: No Tumor
+    - 1: Meningioma
+    - 2: Glioma
+    - 3: Pituitary
+- MRI Views: Axial, Coronal, Sagittal.
 
-### 2. Offline Preprocessing (Phase 1)
-Convert the raw `.mat` files into efficient `.pt` formats. 
-```bash
-python preprocess_mat_dataset.py
-```
-*Note: This will take several minutes as it iterates through all 6000 samples. It will create a `processed/` directory containing the saved tensors and `metadata.json`.*
+## 🏗️ Architecture: Multi-Task U-Net
 
-### 3. Sanity Check
-Verify the preprocessing pipeline and DataLoader integration.
-```bash
-python sanity_check.py
-```
+The pipeline utilizes a custom Multi-Task U-Net designed for simultaneous spatial and categorical inference.
 
-### 4. Using the Dataset in Future Phases
-In your Phase 2 experiments, integrate the dataset as follows:
+- Encoder: A hierarchical feature extractor with three levels of double convolutions and max pooling, progressively increasing feature depth from 32 to 128 channels.
+- Bottleneck: A dense 256-channel latent space capturing the most abstract representations of the MRI slice.
+- Segmentation Head: Decodes bottleneck features back to the spatial dimension using transposed convolutions. Skip connections from the encoder are integrated to recover fine-grained spatial details for precise tumor boundary localization.
+- Classification Head: Applies global adaptive average pooling to the bottleneck features, which are then fused with a 16-dimensional learnable View Embedding (representing Axial, Coronal, or Sagittal planes) before passing through a dropout-regularized fully connected network.
 
-```python
-from torch.utils.data import DataLoader
-from dataset import BrainTumorDataset
+## ⚙️ Training Process
 
-# Load datasets
-train_dataset = BrainTumorDataset(metadata_path='processed/metadata.json', mode='train')
-test_dataset = BrainTumorDataset(metadata_path='processed/metadata.json', mode='test')
+The training phase is optimized for stability and performance on medical imaging data:
 
-# Create loaders
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+- Multi-Task Optimization: The model optimizes a joint loss function combining Dice Loss (segmentation) and Weighted Cross-Entropy Loss (classification). The loss weights are balanced to prioritize segmentation accuracy (1.0) alongside classification (0.5).
+- Balanced Sampling: Uses a WeightedRandomSampler to address class imbalance in the training set, ensuring the model sees infrequent tumor types more often.
+- Efficient Training: 
+    - Mixed Precision (FP16): Utilizes torch.amp for faster computation and reduced memory footprint.
+    - Gradient Accumulation: Simulates larger batch sizes by accumulating gradients over multiple steps before performing an optimizer update.
+    - Gradient Clipping: Prevents exploding gradients by capping the maximum norm.
+- Learning Rate Schedule: Employs a Cosine Annealing scheduler to smoothly decay the learning rate, helping the model settle into narrower local minima for better generalization.
 
-# Normal training loop...
-```
+## 📈 Performance Results
 
-## Design Decisions
-1. **Offline `.pt` Conversion**: Reading `.mat` files dynamically with `scipy.io` during training introduces significant I/O latency. Preprocessing them into PyTorch Tensors (`.pt`) keeps the training loop GPU-bound rather than CPU/Disk-bound.
-2. **Global Metadata**: A single `metadata.json` tracks statistics, label info, splits, and mapped paths. This avoids running `os.listdir` on massive folders and simplifies split filtering.
-3. **Data Types**: Images are stored as `float32` immediately to prevent precision loss. Masks are stored as `uint8` to save disk space over `float32` (and converted later if specifically needed by a loss function). Labels and Views are kept as `torch.long`.
+Based on the latest evaluation on the 1,000-sample test set:
+
+| Metric | Score |
+| :--- | :--- |
+| Test Dice Score | ~0.54 |
+| Test IoU | ~0.43 |
+| Classification F1-macro | ~0.88 |
+
+Performance varies slightly depending on hyperparameter tuning and random seeds.
+
+## 💻 Getting Started
+
+### Prerequisites
+- Python 3.10+
+- PyTorch 2.0+ (CUDA recommended)
+- kagglehub, scipy, matplotlib, scikit-learn, tqdm
+
+### Usage
+The entire pipeline is consolidated into a single, easy-to-follow Jupyter notebook.
+1. Clone the repository.
+2. Ensure you have Kaggle credentials configured if necessary (though kagglehub handles public downloads).
+3. Open and run brain-tumor-classification.ipynb linearly.
+
+The notebook will handle:
+- Automatic Data Acquisition: Downloads the dataset to your local cache.
+- Exploratory Data Analysis (EDA): Visualizes spatial overlays and class distributions.
+- Feature Engineering Preview: Demonstrates the impact of Edge Maps and Normalization.
+- Full Training Loop: Executes the multi-task training with real-time progress bars.
+- Comprehensive Evaluation: Generates Confusion Matrices, Best/Worst segmentation plots, and Grad-CAM heatmaps.
