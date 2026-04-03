@@ -1,4 +1,4 @@
-# Multi-Task Brain Tumor MRI Classification & Segmentation
+# Multi-Task U-Net for Brain Tumor MRI Classification & Segmentation
 
 This repository contains a high-performance deep learning pipeline for the automated analysis of brain tumor MRI scans. Using the BriscMat Brain Tumour MRI Dataset (2026), the system performs simultaneous tumor segmentation and multi-class classification using a specialized Multi-Task U-Net architecture.
 
