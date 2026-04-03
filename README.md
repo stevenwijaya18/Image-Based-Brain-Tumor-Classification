@@ -1,5 +1,9 @@
 # Multi-Task U-Net for Brain Tumor MRI Classification & Segmentation
 
+![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
+![Environment](https://img.shields.io/badge/Environment-PyTorch%20%7C%20Jupyter-blue)
+![Architecture](https://img.shields.io/badge/Architecture-MultiTask%20UNet-orange)
+
 This repository contains a high-performance deep learning pipeline for the automated analysis of brain tumor MRI scans. Using the BriscMat Brain Tumour MRI Dataset (2026), the system performs simultaneous tumor segmentation and multi-class classification using a specialized Multi-Task U-Net architecture.
 
 ## 🚀 Key Features
