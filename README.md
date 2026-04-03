@@ -36,6 +36,8 @@ The pipeline uses the BriscMat Brain Tumour MRI Dataset (2026) consisting of 6,0
     - cjdata.label: Categorical class label.
     - cjdata.view: MRI view identifier.
 
+You can obtain BriscMat Brain Tumour MRI Dataset from [Kaggle](https://www.kaggle.com/datasets/vivanrv/briscmat-brain-tumour-mri-dataset-2026).
+
 ## 🏗️ Architecture: Multi-Task U-Net
 
 The pipeline utilizes a custom Multi-Task U-Net designed for simultaneous spatial and categorical inference.
